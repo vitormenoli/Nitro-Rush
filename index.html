@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nitro Rush 3D</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1115'/%3E%3Cpath d='M14 44a20 20 0 1 1 36 0' fill='none' stroke='%23ff3347' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M32 40l10-14' stroke='%23fff' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='40' r='4.5' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Titillium+Web:ital,wght@0,400;0,600;0,700;0,900;1,700;1,900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="vignette" id="vignette"></div>
+<div id="speedfx"></div>
+<div id="rainfx"></div>
+<div id="dropfx"></div>
+<div id="frostfx"></div>
+
+<!-- Carregamento -->
+<div id="loading">
+  <div class="logo">NITRO<span>RUSH 3D</span></div>
+  <div class="load-bar"><i id="loading-bar"></i></div>
+  <div id="loading-text">CARREGANDO MOTOR GRÁFICO…</div>
+  <div id="boot-error"></div>
+</div>
+
+<!-- Barra superior: nível da conta + moedas -->
+<div id="topbar">
+  <div class="chip glass lvl" id="lvl-chip" title="Nível da conta (XP)">
+    <div class="lvl-badge" id="lvl-num">1</div>
+    <div class="lvl-info">
+      <div class="lvl-top"><b id="lvl-label">NÍVEL 1</b><span id="lvl-xp">0 / 1.000 XP</span></div>
+      <div class="xpbar"><i id="lvl-bar"></i></div>
+    </div>
+  </div>
+  <div class="chip glass"><span class="coin-ic"></span><span id="coin-balance">0</span></div>
+  <button class="icon-btn glass" id="btn-mute" title="Som (M)" data-icon="sound"></button>
+</div>
+
+<!-- Menu principal -->
+<div class="screen" id="screen-menu">
+  <div class="menu-panel glass">
+    <div class="logo">NITRO<span>RUSH 3D</span></div>
+    <div class="tagline">23 CARROS <i class="sep"></i> 6 CIRCUITOS REAIS <i class="sep"></i> CAMPANHA MUNDIAL</div>
+    <button class="btn primary" data-go="setup"><span class="ic" data-icon="globe"></span>Campanha</button>
+    <button class="btn" data-go="garage"><span class="ic" data-icon="garage"></span>Garagem</button>
+    <button class="btn" data-go="help"><span class="ic" data-icon="gamepad"></span>Controles</button>
+    <button class="btn" data-go="settings"><span class="ic" data-icon="settings"></span>Configurações</button>
+    <div class="menu-foot"><span id="menu-stats">0 corridas</span><span>v3.0</span></div>
+  </div>
+  <div class="menu-car"><div class="lbl">SEU CARRO</div><div class="nm" id="menu-car-name">—</div></div>
+</div>
+
+<!-- Campanha: mapa-múndi com os circuitos reais + painel da etapa -->
+<div class="screen" id="screen-setup">
+  <button class="back" data-go="menu"><span data-icon="back"></span>VOLTAR</button>
+  <div class="camp">
+    <div class="camp-head"><div class="h2"><span class="h-ic" data-icon="globe"></span>CAMPANHA MUNDIAL</div><div class="camp-prog" id="camp-prog">0 / 6</div></div>
+    <div class="camp-map glass" id="camp-map"></div>
+    <div class="camp-legend">
+      <span class="lg won"><i></i>VENCIDO</span><span class="lg open"><i></i>LIBERADO</span><span class="lg locked"><i></i>BLOQUEADO</span>
+      <span class="lg-note">Cada etapa libera com o <b>Nível da conta</b> e a <b>vitória (1º lugar)</b> na etapa anterior</span>
+    </div>
+    <div class="camp-detail glass">
+      <div class="cs-outline" id="cs-outline"></div>
+      <div class="cd-right"><div class="cs-facts" id="cs-facts"></div><div class="cs-desc" id="cs-desc"></div></div>
+    </div>
+  </div>
+  <div class="camp-side glass" id="camp-side">
+    <div class="cs-stage" id="cs-stage">ETAPA 1 / 6</div>
+    <div class="cs-name" id="cs-name">—</div>
+    <div class="cs-full" id="cs-full">—</div>
+    <div class="cs-req" id="cs-req"></div>
+    <div class="cs-best" id="cs-best"></div>
+    <div class="cs-actions">
+    <div class="mode-row" id="mode-list">
+      <button class="mode-btn" data-mode="race"><span class="mi" data-icon="flag"></span><span><b>CORRIDA</b><small>contra 10 IAs</small></span></button>
+      <button class="mode-btn" data-mode="trial"><span class="mi" data-icon="ghost"></span><span><b>TREINO GHOST</b><small>contra o relógio</small></span></button>
+    </div>
+    <div id="diff-block">
+      <div class="diff-row" id="diff-list">
+        <button class="diff-btn" data-diff="easy"><b>FÁCIL</b><small>moedas x1,0 · XP x1,0</small></button>
+        <button class="diff-btn" data-diff="medium"><b>MÉDIO</b><small>moedas x1,5 · XP x1,3</small></button>
+        <button class="diff-btn" data-diff="hard"><b>DIFÍCIL</b><small>moedas x2,2 · XP x1,6</small></button>
+      </div>
+    </div>
+    <div class="sub" id="setup-sub"></div>
+    <div class="setup-foot">
+      <div class="setup-info">Carro: <b id="setup-car">—</b></div>
+      <div class="sf-btns">
+        <button class="btn small" data-go="garage"><span class="ic" data-icon="garage"></span>GARAGEM</button>
+        <button class="btn primary small" id="btn-start-race">INICIAR</button>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Garagem -->
+<div class="screen" id="screen-garage">
+  <button class="back" data-go="menu"><span data-icon="back"></span>VOLTAR</button>
+  <div class="g-left glass">
+    <div class="h2" style="font-size:18px"><span class="h-ic" data-icon="garage"></span>CONCESSIONÁRIA <small id="garage-count" style="font-size:12px;color:var(--muted);letter-spacing:.1em"></small></div>
+    <div class="cls-tabs" id="class-tabs"></div>
+    <div id="car-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+  <div class="g-right glass">
+    <div class="gd-nav"><button id="gd-prev" title="Carro anterior" data-icon="prev"></button><span id="gd-index">1 / 23</span><button id="gd-next" title="Próximo carro" data-icon="next"></button></div>
+    <div>
+      <div class="gd-tag" id="gd-tag">—</div>
+      <div class="gd-brand" id="gd-brand">—</div>
+      <div class="gd-name" id="gd-name">—</div>
+      <div class="gd-desc" id="gd-desc">—</div>
+      <div class="gd-model" id="gd-model"></div>
+    </div>
+    <div id="gd-stats"></div>
+    <div id="gd-action"></div>
+    <div class="sec-t">TUNAGEM (UPGRADES)</div>
+    <div id="upgrade-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    <button class="btn primary center" data-go="setup" style="margin-top:6px"><span class="ic" data-icon="globe"></span>IR PARA A CAMPANHA</button>
+  </div>
+  <div class="colors glass" id="color-list"></div>
+</div>
+
+<!-- Controles -->
+<div class="screen" id="screen-help">
+  <button class="back" data-go="menu"><span data-icon="back"></span>VOLTAR</button>
+  <div class="info-panel glass">
+    <div class="h2">CONTROLES</div>
+    <div class="keys">
+      <span><kbd>W</kbd><kbd data-icon="up"></kbd></span><span>Acelerar</span>
+      <span><kbd>S</kbd><kbd data-icon="down"></kbd></span><span>Frear / Ré</span>
+      <span><kbd>A</kbd><kbd>D</kbd><kbd data-icon="left"></kbd><kbd data-icon="right"></kbd></span><span>Esterçar</span>
+      <span><kbd>SHIFT</kbd><kbd>ESPAÇO</kbd></span><span>Nitro (boost)</span>
+      <span><kbd>CTRL</kbd></span><span>Freio de mão (drift)</span>
+      <span><kbd>C</kbd></span><span>Trocar câmera</span>
+      <span><kbd>R</kbd></span><span>Reposicionar carro na pista</span>
+      <span><kbd>ESC</kbd><kbd>P</kbd></span><span>Pausar</span>
+      <span><kbd>M</kbd></span><span>Silenciar som</span>
+      <span><kbd>F</kbd></span><span>Tela cheia</span>
+    </div>
+    <div class="tips">
+      <div><span class="t-ic" data-icon="bulb"></span><span><b>Pontuação:</b> alta velocidade, <b>drifts</b> longos (ângulo × velocidade) e ultrapassagens.</span></div>
+      <div><span class="t-ic" data-icon="bolt"></span><span>O <b>Nitro</b> recarrega em alta velocidade e ao completar drifts.</span></div>
+      <div><span class="t-ic coin-ic"></span><span>Colete moedas nas curvas. Gaste na garagem em carros e tunagem.</span></div>
+      <div><span class="t-ic" data-icon="levelup"></span><span>Cada corrida rende <b>XP</b>. Suba de <b>nível</b> e <b>vença</b> cada etapa para avançar no mapa da campanha.</span></div>
+      <div><span class="t-ic" data-icon="ghost"></span><span>No <b>Treino Ghost</b> você corre contra o carro sombra da sua melhor volta — salvo mesmo se fechar o jogo.</span></div>
+      <div><span class="t-ic" data-icon="gamepad"></span><span>Controle (gamepad) e toque também são suportados.</span></div>
+    </div>
+    <div class="h2 credits-h"><span class="h-ic" data-icon="credits"></span>CRÉDITOS E DADOS</div>
+    <div class="credits">
+      <div><b>Traçados reais</b> — © contribuidores do OpenStreetMap (ODbL); Mônaco: bacinger/f1-circuits (MIT)</div>
+      <div><b>Relevo</b> — NASA SRTM 30 m via OpenTopoData</div>
+      <div><b>Mapa-múndi</b> — Natural Earth (domínio público)</div>
+      <div><b>Modelo 3D externo</b> — Ferrari 458 Italia por vicent091036 (Sketchfab), via exemplos do three.js</div>
+      <div><b>Motor gráfico</b> — three.js r160 (MIT) · GLTFLoader + DRACOLoader</div>
+    </div>
+  </div>
+</div>
+
+<!-- Configurações -->
+<div class="screen" id="screen-settings">
+  <button class="back" data-go="menu"><span data-icon="back"></span>VOLTAR</button>
+  <div class="info-panel glass">
+    <div class="h2">CONFIGURAÇÕES</div>
+    <div class="set-row"><span>Volume</span><input type="range" id="set-volume" min="0" max="1" step="0.05"></div>
+    <div class="set-row"><span>Qualidade gráfica</span>
+      <div class="seg" id="set-quality"><button data-q="low">BAIXA</button><button data-q="medium">MÉDIA</button><button data-q="high">ALTA</button></div></div>
+    <div class="set-row"><span>Mostrar FPS</span><div class="seg" id="set-fps"><button data-v="0">NÃO</button><button data-v="1">SIM</button></div></div>
+    <div class="set-row"><span>Apagar progresso salvo</span><button class="btn small pink" id="btn-reset">RESETAR</button></div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-box" id="hud-tl">
+    <div class="pos-wrap"><span class="pos-ic" data-icon="flag"></span><div class="pos-big" id="hud-pos">11<small>/11</small></div></div>
+    <div class="lap-info">
+      <span class="lap" id="hud-lap">VOLTA 1/3</span>
+      <span>VOLTA <b id="hud-laptime">00:00.000</b></span>
+      <span>MELHOR <b id="hud-best">--:--.---</b></span>
+      <span>TOTAL <b id="hud-time">00:00.000</b></span>
+      <span class="ghost-row" id="hud-ghost-row"><i data-icon="ghost"></i>GHOST <b id="hud-ghost">--</b></span>
+    </div>
+  </div>
+  <div id="minimap"></div>
+  <div id="hud-sector"><i data-icon="pin"></i><span id="hud-sector-t"></span></div>
+  <div class="hud-box" id="hud-bl">
+    <div class="hud-line"><span class="lbl">MOEDAS</span><span class="coin-ic" style="width:18px;height:18px"></span><span id="hud-coins">0</span></div>
+    <div class="hud-line"><span class="lbl">SCORE</span><span id="hud-score">0</span></div>
+  </div>
+  <div id="hud-br">
+    <div id="speedo"></div>
+    <div class="nitro-wrap">
+      <div class="nitro-lbl"><span><i data-icon="bolt"></i>NITRO</span><span id="nitro-pct">50%</span></div>
+      <div class="nitro-seg" id="nitro-bar"></div>
+    </div>
+  </div>
+  <div id="countdown"></div>
+  <div id="hud-msg"></div>
+  <div id="wrongway"><i data-icon="warning"></i>CONTRAMÃO</div>
+  <div id="drift-meter"><div class="dl">DRIFT <span id="drift-mult">x1.0</span></div><div class="dp" id="drift-pts">0</div></div>
+  <div id="popups"></div>
+  <div class="hud-hint" id="hud-hint"><kbd>ESC</kbd> pausa <kbd>C</kbd> câmera <kbd>R</kbd> reposiciona</div>
+</div>
+
+<!-- Toque -->
+<div id="touch">
+  <div class="tbtn" data-k="left"  style="left:18px;bottom:26px;width:84px;height:84px" data-icon="prev"></div>
+  <div class="tbtn" data-k="right" style="left:116px;bottom:26px;width:84px;height:84px" data-icon="next"></div>
+  <div class="tbtn lbl" data-k="brake" style="right:270px;bottom:26px;width:72px;height:72px"><i data-icon="brake"></i>FREIO</div>
+  <div class="tbtn lbl" data-k="nitro" style="right:270px;bottom:110px;width:72px;height:72px"><i data-icon="bolt"></i>NOS</div>
+  <div class="tbtn lbl" data-k="gas"   style="right:356px;bottom:26px;width:84px;height:84px"><i data-icon="pedal"></i>GÁS</div>
+</div>
+
+<!-- Pausa -->
+<div class="screen" id="screen-pause">
+  <div class="pause-panel glass">
+    <div class="h2">PAUSADO</div>
+    <button class="btn primary center" data-act="resume"><span class="ic" data-icon="play"></span>CONTINUAR</button>
+    <button class="btn center" data-act="restart"><span class="ic" data-icon="retry"></span><span id="pause-restart">REINICIAR CORRIDA</span></button>
+    <button class="btn center" data-act="quit" id="pause-quit"><span class="ic" data-icon="back"></span>SAIR PARA O MENU</button>
+  </div>
+</div>
+
+<!-- Resultado -->
+<div class="screen" id="screen-results">
+  <div class="res-panel glass">
+    <div>
+      <div class="res-title" id="res-title">CORRIDA FINALIZADA</div>
+      <div class="res-pos" id="res-pos">1º</div>
+      <div class="kv">
+        <div id="res-k1">TEMPO TOTAL<b id="res-time">--</b></div>
+        <div>MELHOR VOLTA<b id="res-best">--</b></div>
+        <div>SCORE<b id="res-score">0</b></div>
+      </div>
+      <table class="stand"><tbody id="res-standings"></tbody></table>
+    </div>
+    <div>
+      <div class="h2" style="font-size:18px">RECOMPENSAS</div>
+      <div id="res-rewards"></div>
+      <div id="res-xp"></div>
+    </div>
+    <div class="res-btns">
+      <button class="btn primary center" data-act="again"><span class="ic" data-icon="retry"></span><span id="res-again">CORRER NOVAMENTE</span></button>
+      <button class="btn center" data-act="garage"><span class="ic" data-icon="garage"></span>GARAGEM</button>
+      <button class="btn center" data-act="campaign"><span class="ic" data-icon="globe"></span>CAMPANHA</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="glass"></div>
+<div id="fps"></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+// Carregador: importa o Three.js (CDN) e expõe no escopo global; depois carrega os scripts do jogo em ordem.
+// (scripts clássicos funcionam tanto abrindo o index.html direto quanto por um servidor local)
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+Object.assign(window, { THREE, EffectComposer, RenderPass, UnrealBloomPass, OutputPass, GLTFLoader, DRACOLoader });
+const SCRIPTS = ['src/Engine.js', 'src/PhysicsEngine.js', 'src/Vehicles.js', 'src/TrackManager.js', 'src/App.js'];
+const load = (src) => new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => fail(new Error('não foi possível carregar ' + src)); document.head.appendChild(s); });
+try {
+  for (const src of SCRIPTS) await load(src);
+  window.__nitroBooted = true;
+  NitroApp.boot();
+} catch (e) {
+  console.error(e);
+  const b = document.getElementById('boot-error'); b.style.display = 'block'; b.textContent = 'Erro ao iniciar: ' + e.message;
+}
+</script>
+<script>
+  // Aviso caso o Three.js (CDN) não carregue
+  setTimeout(function () {
+    if (!window.__nitroBooted) {
+      var e = document.getElementById('boot-error'); e.style.display = 'block';
+      e.innerHTML = 'Não foi possível carregar o Three.js pela CDN.<br>Verifique sua conexão com a internet e recarregue a página.';
+      document.getElementById('loading-text').textContent = 'ERRO AO CARREGAR';
+    }
+  }, 15000);
+</script>
+</body>
+</html>
